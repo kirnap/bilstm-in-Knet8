@@ -1,6 +1,9 @@
 
 # Created by https://www.gitignore.io/api/macos,emacs,sublimetext,julia
 
+# Garbage working ignorance
+garbage.jl
+
 ### macOS ###
 *.DS_Store
 .AppleDouble
