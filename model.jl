@@ -74,36 +74,33 @@ end
 
 
 """
-Go one step forward for a given input to the stacked lstm,
-input: in language modeling input is a embeded version of a single token
-returns the last hidden layer of the stacked lstm
+Go one step forward and return the final hidden state of the lstm for a given input
+parameters[2k-1] is weight, parameters[2k] is bias for the kth layer
+states[2k-1] is the hidden and states[2k] is the cell for the kth layer
 """
-function sforw(l::LSTM, input)
-    # TODO check with the l.states modification
-    x = input # input is the embeded version of the original vocabulary
-    for i=1:2:length(l.states)
-        (l.states[i], l.states[i+1]) = lstm(l.parameters[i], l.parameters[i+1], l.states[i], l.states[i+1], x)
-        x = l.states[i]
+function sforw(parameters, states, input)
+    x = input
+    for i=1:2:length(states)
+        (states[i], states[i+1]) = lstm(parameters[i], parameters[i+1], states[i], states[i+1], x)
+        x = states[i]
     end
-    return l.states[end-1] 
+    return x
 end
 
 
-# TODO: Merge layer will handle the final prediction parameters, namely weight and bias
 """
 Go forward and collect hidden states of the lstm for a sequence
 sequence is padded from begining with token <s> and end with token </s>
 returns hiddenlayers: contains the final hidden states of the forward and backward lstms in correct order,
-
 """
-function bilsforw(net::LSTM, sequence; forwardlstm=true)
+function bilsforw(parameters, states, sequence; forwardlstm=true)
     hiddenlayers = Array(Any, length(sequence))
 
     # if forward first item else the last item will be zeros of the same size with other items
     traverse = (forwardlstm ? (2:length(sequence)) : (length(sequence)-1:-1:1))
 
     for i=traverse
-        result = sforw(net, sequence[i])
+        result = sforw(parameters, states, sequence[i])
         hiddenlayers[i] = result
     end
 
@@ -114,3 +111,10 @@ function bilsforw(net::LSTM, sequence; forwardlstm=true)
 end
 
 
+function loss(paramdict, statedict, sequence)
+    fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence)
+    bhiddens = bilsforw(paramdict["back"], statedict["back"], sequence; forwardlstm=false)
+    # TODO : Merge them and find the predictions, accumulate the loss
+    
+    
+end
