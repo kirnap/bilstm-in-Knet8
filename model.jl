@@ -75,7 +75,7 @@ end
 
 """
 Go one step forward for a given input to the stacked lstm,
-input: in language modeling input is a single token
+input: in language modeling input is a embeded version of a single token
 returns the last hidden layer of the stacked lstm
 """
 function sforw(l::LSTM, input)
