@@ -107,9 +107,10 @@ function bilsforw(net::LSTM, sequence; forwardlstm=true)
         hiddenlayers[i] = result
     end
 
-    padindex = (forwardlstm ? 1 : end)
+    padindex = (forwardlstm ? 1 : length(hiddenlayers))
     padding = convert(atype, zeros(eltype(hiddenlayers[3]), size(hiddenlayers[3])))
-    hiddenlayers[padindex] = padding    
+    hiddenlayers[padindex] = padding
+    return hiddenlayers
 end
-# TODO : test the bilstm forward implementation
+
 
