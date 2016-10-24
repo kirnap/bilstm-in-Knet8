@@ -111,10 +111,23 @@ function bilsforw(parameters, states, sequence; forwardlstm=true)
 end
 
 
-function loss(paramdict, statedict, sequence)
+"""
+Calculated the cross-entropy loss function through a given sequence and returns the loss per token
+"""
+function loss(paramdict, statedict, sequence, atype)
+    total = 0.0
+    count = 0
     fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence)
     bhiddens = bilsforw(paramdict["back"], statedict["back"], sequence; forwardlstm=false)
-    # TODO : Merge them and find the predictions, accumulate the loss
-    
-    
+
+    # go through the sequence one token at a time
+    for t=1:length(fhiddens)
+        ypred = hcat(fidden[t], bhidden[t]) * paramdict["merge"][1] .+ paramdict["merge"][2] # merge the hidden layers
+        ynorm = logp(ypred, 2)
+        ygold = convert(atype, sequence[t])
+        total += sum(ygold .* ynorm)
+        count += size(ygold, 1) # each row corresponds to one instance in minibatch        
+    end
+    # TODO: check with the count calculation to test loss per token is calculated
+    return -total / count
 end
