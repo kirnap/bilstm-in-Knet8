@@ -113,6 +113,9 @@ end
 
 """
 Calculated the cross-entropy loss function through a given sequence and returns the loss per token
+paramdic["forw"]: holds the forward lstm variables
+paramdict["back"]: holds the backward lstm variables
+paramdict["merge"][1],[2]: holds the weights for final prediction, and bias respectively.
 """
 function loss(paramdict, statedict, sequence, atype)
     total = 0.0
