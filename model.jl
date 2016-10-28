@@ -9,7 +9,7 @@ nlayers: Number of stacked lstm layers
 states: Holds the cell and hidden states as state[2k-1,2k]: hidden and cell
 """
 type LSTM
-    parameters::Array
+    parameters::Array{Any, 1}
     nlayers::Int
     states::Array
     atype::DataType
@@ -23,7 +23,7 @@ type LSTM
 end
 
 
-# No need for embedding matrix TODO: lookup table implementation
+# TODO: implement embedding matrix s.t. it is of the size <vocab X embed>, decision of the KnetArray or not
 """
 Initialized the weights and biases for the stacked LSTM.
 atype: Array type of the machine, namely KnetArray or Array regarding of gpu usage
@@ -112,6 +112,16 @@ end
 
 
 """
+embedding : <vocab x embed> size matrix each row contains one of the related words
+minibatch : contains batchsize many nth words of the sequences
+"""
+function lookup(embedding, minibatch, atype)
+    result = embedding[minibatch, :]
+    return convert(atype, result)
+end
+
+
+"""
 Calculated the cross-entropy loss function through a given sequence and returns the loss per token
 paramdic["forw"]: holds the forward lstm variables
 paramdict["back"]: holds the backward lstm variables
@@ -120,17 +130,22 @@ paramdict["merge"][1],[2]: holds the weights for final prediction, and bias resp
 function loss(paramdict, statedict, sequence, atype)
     total = 0.0
     count = 0
-    fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence)
+    fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence) # TODO to be decided the emnedding version
     bhiddens = bilsforw(paramdict["back"], statedict["back"], sequence; forwardlstm=false)
 
     # go through the sequence one token at a time
     for t=1:length(fhiddens)
         ypred = hcat(fidden[t], bhidden[t]) * paramdict["merge"][1] .+ paramdict["merge"][2] # merge the hidden layers
         ynorm = logp(ypred, 2)
-        ygold = convert(atype, sequence[t])
+        ygold = convert(atype, sequence[t])  # if KnetArray does not support linear indexing multiplication seems better alternative
         total += sum(ygold .* ynorm)
         count += size(ygold, 1) # each row corresponds to one instance in minibatch        
     end
-    # TODO: check with the count calculation to test loss per token is calculated
-    return -total / count
+    return -total / count     # TODO: check with the count calculation to test loss per token is calculated
 end
+
+# Here are the remaining TODOs:
+# - Implement look up from embedding matrix. DONE
+# - Check with the weight initializations s.t. the embedding matrix is still embedding, (KnetArray support?)
+# - Implement loss function to do that flatten the final prediction matrix s.t. when we choose the correct entries of final prediction matrix
+# - Based on the above steps implement the loss function
