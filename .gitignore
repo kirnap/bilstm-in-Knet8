@@ -4,6 +4,7 @@
 # Garbage working ignorance
 garbage.jl
 backup*
+foo*
 
 ### macOS ###
 *.DS_Store
