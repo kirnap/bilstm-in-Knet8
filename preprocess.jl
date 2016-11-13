@@ -1,13 +1,15 @@
 # Sequential preprocessor for large sized text files
 
-# Rough TODO:
-# Flexibility of vocab file and create the vocabulary while reading the file
 # Gather the sequences of the same length s.t. when it is called it brings batches of similar sequences with the help of iterables
+
+import Base: start, next, done
+
 
 const SOS = "<s>"
 const EOS = "</s>"
 const UNK = "<unk>"
 const LLIMIT = 2
+
 
 type Data
     word_to_index::Dict{AbstractString, Int}
@@ -16,6 +18,7 @@ type Data
     serve_type::AbstractString
     sequences::Dict
 end
+
 
 function Data(datafile; word_to_index=nothing, vocabfile=nothing, serve_type=nothing, batchsize=20)
     (serve_type == nothing) && error("Please specify the data serve type: onehot, bitarray or sequence")
@@ -43,8 +46,9 @@ function Data(datafile; word_to_index=nothing, vocabfile=nothing, serve_type=not
         end
         push!(words, word_to_index[EOS])
         skey = length(words)
-        (!haskey(sequences, skey)) && (skey > LLIMIT) && (sequences[skey] = Any[])
-        (skey != LLIMIT) && push!(sequences[skey], words)
+        (skey == LLIMIT) && println("LLMIT needs to be checked") #'ceause we already put <s> and </s> tokens?
+        (!haskey(sequences, skey)) && (sequences[skey] = Any[])
+        push!(sequences[skey], words)
     end
     close(stream)
     vocabsize = length(word_to_index)
@@ -54,6 +58,99 @@ function Data(datafile; word_to_index=nothing, vocabfile=nothing, serve_type=not
     end
     Data(word_to_index, index_to_word, batchsize, serve_type, sequences)
 end
+
+
+function sentenbatch(nom::Array{Any,1}, from::Int, batchsize::Int, vocabsize::Int; serve_type="bitarr")
+    total = length(nom)
+    to = (from + batchsize - 1 < total) ? (from + batchsize - 1) : total
+
+    # not to work with surplus sentences
+    if (to-from + 1 < batchsize)
+        return (nothing,1)
+    end
+    
+    new_from = (to == total) ? 1 : (to + 1)
+    seqlen = length(nom[1]) # TODO: get rid of length computation give it as an extra argument!
+    sentences = nom[from:to]
+
+    if serve_type == "lookup"
+        return (sentences, new_from)
+    end
+
+    scount = batchsize # modified future code
+    data = [ falses(scount, vocabsize) for i=1:seqlen ]
+    for cursor=1:seqlen
+        for row=1:scount
+            index = sentences[row][cursor]
+            data[cursor][row, index] = 1
+        end   
+    end
+    return (data, new_from)
+
+    # FUTURE CODE: if one day knet8 allows us to change batchsize on the fly, following lines will implement surplus batch implementation
+    # (length(sentences) != batchsize) && (println("I am using the surplus sentences:) $from : $to"))
+    # scount = length(sentences) # it can be either batchsize or the surplus sentences
+    # data = [ falses(scount, vocabsize) for i=1:seqlen ]
+    # for cursor=1:seqlen
+    #     for row=1:scount
+    #         index = sentences[row][cursor]
+    #         data[cursor][row, index] = 1
+    #     end   
+    # end
+end
+
+
+function start(s::Data)
+    slens = collect(keys(s.sequences))
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
