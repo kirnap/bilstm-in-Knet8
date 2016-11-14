@@ -66,6 +66,7 @@ function sentenbatch(nom::Array{Any,1}, from::Int, batchsize::Int, vocabsize::In
 
     # not to work with surplus sentences
     if (to-from + 1 < batchsize)
+        warning("Surplus does not being cleaned correctly!")
         return (nothing, 1)
     end
     
@@ -101,21 +102,26 @@ end
 
 
 """Removes the surplus sentences randomly"""
-function clean_seqdict!(seqdict::Dict{Int64,Array{Any,1}}, batchsize::Int, seqlen::Int)
-    remain = rem(length(seqdict[seqlen]), batchsize)
-    while remain != 0
-        index = rand(1:length(seqdict[seqlen]))
-        deleteat!(seqdict[seqlen], index)
-        remain -= 1
+function clean_seqdict!(seqdict::Dict{Int64,Array{Any,1}}, batchsize::Int)
+    for seqlen in keys(seqdict)
+        remain = rem(length(seqdict[seqlen]), batchsize)
+        while remain != 0
+            index = rand(1:length(seqdict[seqlen]))
+            deleteat!(seqdict[seqlen], index)
+            remain -= 1
+        end
+        if isempty(seqdict[seqlen])
+            delete!(seqdict, seqlen)
+        end
     end
 end
 
 
 function start(s::Data)
     sdict = copy(s.sequences)
+    clean_seqdict!(sdict, s.batchsize)
     slens = collect(keys(sdict))
     seqlen = pop!(slens)
-    clean_seqdict!(sdict, s.batchsize, seqlen)
     from = nothing
     vocabsize = length(s.word_to_index)
     state = (sdict, seqlen, slens,from, vocabsize)
@@ -130,7 +136,6 @@ function next(s::Data, state)
         (item, new_from) = sentenbatch(sdict[seqlen], 1, s.batchsize, vocabsize)
     elseif from == 1
         seqlen = pop!(slens)
-        clean_seqdict!(sdict, s.batchsize, seqlen)
         (item, new_from) = sentenbatch(sdict[seqlen], from, s.batchsize, vocabsize)
     else
         (item, new_from) = sentenbatch(sdict[seqlen], from, s.batchsize, vocabsize)
