@@ -152,55 +152,6 @@ function done(s::Data, state)
 end
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 """ Creates a set that contains all the words in that file, vocab file given as each vocab in a single line """
 function vocab_from_file(vocabfile)
     V = Set{AbstractString}()
