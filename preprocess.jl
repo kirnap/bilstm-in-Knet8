@@ -14,7 +14,7 @@ const LLIMIT = 2
 type Data
     word_to_index::Dict{AbstractString, Int}
     index_to_word::Vector{AbstractString}
-    batchsize::Int32
+    batchsize::Int
     serve_type::AbstractString
     sequences::Dict
 end
@@ -66,7 +66,7 @@ function sentenbatch(nom::Array{Any,1}, from::Int, batchsize::Int, vocabsize::In
 
     # not to work with surplus sentences
     if (to-from + 1 < batchsize)
-        return (nothing,1)
+        return (nothing, 1)
     end
     
     new_from = (to == total) ? 1 : (to + 1)
@@ -100,10 +100,51 @@ function sentenbatch(nom::Array{Any,1}, from::Int, batchsize::Int, vocabsize::In
 end
 
 
-function start(s::Data)
-    slens = collect(keys(s.sequences))
+"""Removes the surplus sentences randomly"""
+function clean_seqdict!(seqdict::Dict{Int64,Array{Any,1}}, batchsize::Int, seqlen::Int)
+    remain = rem(length(seqdict[seqlen]), batchsize)
+    while remain != 0
+        index = rand(1:length(seqdict[seqlen]))
+        deleteat!(seqdict[seqlen], index)
+        remain -= 1
+    end
 end
 
+
+function start(s::Data)
+    sdict = copy(s.sequences)
+    slens = collect(keys(sdict))
+    seqlen = pop!(slens)
+    clean_seqdict!(sdict, s.batchsize, seqlen)
+    from = nothing
+    vocabsize = length(s.word_to_index)
+    state = (sdict, seqlen, slens,from, vocabsize)
+    return state
+end
+
+
+function next(s::Data, state)
+    (sdict, seqlen, slens, from, vocabsize) = state
+
+    if from == nothing
+        (item, new_from) = sentenbatch(sdict[seqlen], 1, s.batchsize, vocabsize)
+    elseif from == 1
+        seqlen = pop!(slens)
+        clean_seqdict!(sdict, s.batchsize, seqlen)
+        (item, new_from) = sentenbatch(sdict[seqlen], from, s.batchsize, vocabsize)
+    else
+        (item, new_from) = sentenbatch(sdict[seqlen], from, s.batchsize, vocabsize)
+    end
+    from = new_from
+    state = (sdict, seqlen, slens, from, vocabsize)
+    return (item, state)
+end
+
+
+function done(s::Data, state)
+    (sdict, seqlen, slens, from, vocabsize) = state
+    return isempty(slens) && (from == 1)
+end
 
 
 
