@@ -1,10 +1,10 @@
-# This file is not readable yet, is used for unit testing purposes needs to be organized
+# This file is not readable yet, is used for unit testing purposes needs to be organizedo
 include("preprocess.jl")
 
 
 function test_datatype(datafile)
     serve_type = "bitarray"
-    batchsize = 20
+    batchsize = 57
     data = Data(datafile; serve_type=serve_type, batchsize=batchsize)
     return data
 end
