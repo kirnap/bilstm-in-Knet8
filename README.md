@@ -8,11 +8,11 @@ BLSTM model accepts sequence as an input, and in this task our sequences are inp
 Suppose that you have a data file such that in eachline of that file there exists one single sentence of length n. There you can use `Data type` as follows:
 ```Julia
 include("preprocess.jl")
-datafile = "testdata.txt"
+datafile = "readme_data.txt"
 batchsize = 3
 test_data = Data(datafile; batchsize=batchsize)
 for sequence in test_data
-    # feed your model with sequence and 
+	# Feed your blstm model with that sequence
 end 
 ```
 To understand what ```sequence``` is let's go through with an example. Suppose you have 3 test sentences of length 6 and ```batchsize``` is 3:
@@ -33,8 +33,32 @@ When you construct a data out of that test sentences the sequence will be an arr
 However, one more trick here is applied by `Data` is that each word is not represented as regular string but instead they are encoded as one-hots where 1 represented as `true` and 0s represented as `false` for the sake of memory usage. Finally, each element of the sequence is a bitarray of size `batchsize, vocabulary`. The very final version of sequence:
 
 ```Julia
-TODO: put here the the sequence
+julia> sequence
+8-element Array{BitArray{2},1}:
+ Bool[true false … false false; true false … false false; true false … false false]
+ Bool[false false … false false; false false … false false; false false … false false]
+ Bool[false false … false false; false false … false false; false false … false false]
+ Bool[false false … false false; false false … false false; false false … false false]
+ Bool[false false … false false; false false … false false; false false … false false]
+ Bool[false false … false false; false false … false false; false false … true false]
+ Bool[false false … false false; false false … false false; false false … false true]
+ Bool[false true … false false; false true … false false; false true … false false]
+ 
+
+julia> sequence[1]
+3×20 BitArray{2}:
+ true  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false
+ true  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false
+ true  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false
+ 
+
+julia> sequence[4]
+3×20 BitArray{2}:
+ false  false  false  false  false   true  false  false  false  false  false  false  false  false  false  false  false  false  false  false
+ false  false  false  false  false  false  false  false  false  false  false   true  false  false  false  false  false  false  false  false
+ false  false  false  false  false  false  false  false  false  false  false  false  false  false  false  false   true  false  false  false
 ```
+
 TODO:put additional futures of ```Data```
 
 ## Model
