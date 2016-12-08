@@ -1,5 +1,4 @@
 # Sequential preprocessor for large sized text files
-
 # Gather the sequences of the same length s.t. when it is called it brings batches of similar sequences with the help of iterables
 
 import Base: start, next, done
@@ -87,17 +86,6 @@ function sentenbatch(nom::Array{Any,1}, from::Int, batchsize::Int, vocabsize::In
         end   
     end
     return (data, new_from)
-
-    # FUTURE CODE: if one day knet8 allows us to change batchsize on the fly, following lines will implement surplus batch implementation
-    # (length(sentences) != batchsize) && (println("I am using the surplus sentences:) $from : $to"))
-    # scount = length(sentences) # it can be either batchsize or the surplus sentences
-    # data = [ falses(scount, vocabsize) for i=1:seqlen ]
-    # for cursor=1:seqlen
-    #     for row=1:scount
-    #         index = sentences[row][cursor]
-    #         data[cursor][row, index] = 1
-    #     end   
-    # end
 end
 
 
@@ -164,3 +152,13 @@ function vocab_from_file(vocabfile)
     end
     return V
 end
+# FUTURE CODE: if one day knet8 allows us to change batchsize on the fly, following lines will implement surplus batch implementation, this code snippet would be put on sentenbatch
+    # (length(sentences) != batchsize) && (println("I am using the surplus sentences:) $from : $to"))
+    # scount = length(sentences) # it can be either batchsize or the surplus sentences
+    # data = [ falses(scount, vocabsize) for i=1:seqlen ]
+    # for cursor=1:seqlen
+    #     for row=1:scount
+    #         index = sentences[row][cursor]
+    #         data[cursor][row, index] = 1
+    #     end   
+    # end
