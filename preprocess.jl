@@ -19,8 +19,9 @@ type Data
 end
 
 
-function Data(datafile; word_to_index=nothing, vocabfile=nothing, serve_type=nothing, batchsize=20)
-    (serve_type == nothing) && error("Please specify the data serve type: onehot, bitarray or sequence")
+function Data(datafile; word_to_index=nothing, vocabfile=nothing, serve_type="bitarray", batchsize=20)
+    # TODO: right now Data type can only be a bit array because of Knet support, no need to following line
+    # (serve_type == nothing) && error("Please specify the data serve type: onehot, bitarray or sequence")
     existing_vocab = (word_to_index != nothing)
     if !existing_vocab
         word_to_index = Dict{AbstractString, Int}(SOS=>1, EOS=>2, UNK=>3)
@@ -73,9 +74,10 @@ function sentenbatch(nom::Array{Any,1}, from::Int, batchsize::Int, vocabsize::In
     seqlen = length(nom[1]) # TODO: get rid of length computation give it as an extra argument!
     sentences = nom[from:to]
 
-    if serve_type == "lookup"
-        return (sentences, new_from)
-    end
+    # If Knet supports lookup that part will work correctly, it is commented for speed purposes
+    #if serve_type == "lookup"
+    #    return (sentences, new_from)
+    #end
 
     scount = batchsize # modified future code
     data = [ falses(scount, vocabsize) for i=1:seqlen ]
@@ -106,8 +108,9 @@ end
 
 
 function start(s::Data)
-    sdict = copy(s.sequences)
+    sdict = deepcopy(s.sequences)
     clean_seqdict!(sdict, s.batchsize)
+    @assert (!isempty(sdict)) "There is not enough data with that batchsize $(s.batchsize)"
     slens = collect(keys(sdict))
     seqlen = pop!(slens)
     from = nothing
