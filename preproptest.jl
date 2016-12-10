@@ -57,6 +57,7 @@ end
 """ Returns the sets that contains all the same length sentences """
 function icreate_sets(testfile::AbstractString)
     # Be careful in our testfile there exists only the length of 5-6-7 sentences!
+    # Here in the length of 6 there are two sentences of the same : "part of a series"
     set5 = Set()
     set6 = Set()
     set7 = Set()
@@ -181,7 +182,11 @@ function main()
     global data = test_datatype(datafile)
     global sequences = test_iteration(data)
     
-    # TODO: extensive test for testdata.txt in iterable s.t. check with the sentences etc.
-    # TODO: sentenbatch implementation can be improved after testing with previous material
+    # TODO: check that it <unk>s the unknown words if an external vocabulary is given
 end
-main()
+# main()
+
+# Rough documentation:
+# --
+# Read the all sentence and put them into unique sets by icreate_sets
+# After iterating over the Data type ibuild_sentence can build ith sentence by going over the whole sequence of sequence in Datatype
