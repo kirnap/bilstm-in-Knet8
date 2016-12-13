@@ -96,7 +96,7 @@ sequence is padded from begining with token <s> and end with token </s>
 returns hiddenlayers: contains the final hidden states of the forward and backward lstms in correct order,
 """
 function bilsforw(parameters, states, sequence; forwardlstm=true)
-    hiddenlayers = Array(Any, length(sequence))
+    hiddenlayers = Array(Any, length(sequence)) # TODO: decide is it Any type or atype?
 
     # if forward first item else the last item will be zeros of the same size with other items
     traverse = (forwardlstm ? (2:length(sequence)) : (length(sequence)-1:-1:1))
@@ -117,7 +117,23 @@ Embedding matrix initialization it is of the size (vocab x embed)
 The input to lstm units would be x * W where W is embedding and x is traditional one-hots.
 """
 function initembedding(atype, embedsize, vocabsize, winit)
-    return convert(atype, winit*randn(vocabsize, embedsize))
+    embedding = winit * randn(vocabsize, embedsize)
+    return convert(atype, embedding)
+end
+
+
+"""
+Embeds the one-hot given sequence into dense sequence.
+Inputs: Sequence of one-hots, i.e., sequence[k] is a matrix of batchsize x vocabsize
+and embedding matrix of the size vocab x embedsize
+Output: Sequence of dense-matrices, i.e., sequence[k] is a matrix of vocabsize x embedsize
+"""
+function embed_sequence(parameter, sequence, atype)
+    embedded_sequence = Array(atype, length(sequence))
+    for i=1:length(sequence)
+        embedded_sequence[i] = sequence[i] * parameter
+    end
+    return embedded_sequence
 end
 
 
@@ -130,7 +146,8 @@ paramdict["merge"][1],[2]: holds the weights for final prediction, and bias resp
 function loss(paramdict, statedict, sequence, atype)
     total = 0.0
     count = 0
-    fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence) # TODO to be decided the emnedding version
+    # TODO calculate embedded sequence here and then move to lstm layers
+    fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence) 
     bhiddens = bilsforw(paramdict["back"], statedict["back"], sequence; forwardlstm=false)
 
     # go through the sequence one token at a time
