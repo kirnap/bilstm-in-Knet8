@@ -143,14 +143,19 @@ function done(s::Data, state)
 end
 
 
-""" Creates a set that contains all the words in that file, vocab file given as each vocab in a single line """
-function vocab_from_file(vocabfile)
+""" Creates a set that contains all the words in that file, vocab file given as each vocab in a single line
+    sorted_counted represents pure create_vocab.sh output
+"""
+function vocab_from_file(vocabfile; sorted_counted=true)
     V = Set{AbstractString}()
     open(vocabfile) do file
         for line in eachline(file)
             line = split(line)
-            # (length(line)>1) && push!(V, line[2]) # if the skeleton is given use that 
-            !isempty(line) && push!(V, line[1])
+            if sorted_counted
+                (length(line)>1) && push!(V, line[2])
+            else
+                !isempty(line) && push!(V, line[1])
+            end
         end
     end
     return V
