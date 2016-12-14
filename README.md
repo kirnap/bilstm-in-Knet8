@@ -67,7 +67,24 @@ TODO: put the model definition here
 Ps: Since it is written for my own understanding and testing purpose, I am not recommending to read preproptest.jl file, unless you want to help me to create more sophisticated test coverage.
 
 
+## Loss function implementation details
+---
+Here let **y <sub>pred</sub>**  be the prediction vector which has batchsize many rows and vocabulary size many columns:
 
+![equation](http://www.sciweavers.org/tex2img.php?eq=y_%7Bpred%7D%20%3D%20%5Cbegin%7Bbmatrix%7D%0A%20y_1%26y_2%20%26..%26y_C%20%0A%5Cend%7Bbmatrix%7D_%7Bbatchsize%20%5Chspace%7B1mm%7D%20x%20%20%5Chspace%7B1mm%7D%20vocabsize%7D&bc=White&fc=Black&im=gif&fs=12&ff=arev&edit=0)
 
+The traditional softmax output and loss for a single instance would be
+
+![equation](http://www.sciweavers.org/tex2img.php?eq=%5Chat%7Bp_i%7D%3D%20%5Cfrac%7B%5Cexp%20y_i%7D%7B%5Csum_%7Bc%3D1%7D%5EC%20%5Cexp%20y_c%7D&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)   and   ![equation](http://www.sciweavers.org/tex2img.php?eq=%5Cell%20%3D%20%5Csum_%7Bc%3D1%7D%5EC%20p_c%20%5Clog%20%5Chat%7Bp%7D_c&bc=White&fc=Black&im=gif&fs=12&ff=arev&edit=0)
+
+Let's play with the logarithmic term in the loss function:
+![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Clog%20%5Chat%7Bp%7D_i%20%3D%20log%28e%5E%7By_i%7D%29%20-%20log%28%5Csum_k%5EC%7Be%5E%7Bx_k%7D%7D%29%20%3D%20y_i%20-%20log%28%5Csum_k%5EC%7Be%5E%7Bx_k%7D%7D%29&bc=White&fc=Black&im=gif&fs=12&ff=arev&edit=0)
+
+Finally here is the how knet makes that trick:
+```Julia
+ynorm = logp(ypred,2) # ypred .- log(sum(exp(ypred),2))
+```
+
+Thanks to Professor [Deniz Yuret](http://www.denizyuret.com/) for his genuine help in understanding the concepts.
 
 
