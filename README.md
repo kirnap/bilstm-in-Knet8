@@ -71,7 +71,7 @@ Ps: Since it is written for my own understanding and testing purpose, I am not r
 ---
 Here let **y <sub>pred</sub>**  be the prediction vector which has batchsize many rows and vocabulary size many columns:
 
-![equation](http://www.sciweavers.org/tex2img.php?eq=y_%7Bpred%7D%20%3D%20%5Cbegin%7Bbmatrix%7D%0A%20y_1%26y_2%20%26..%26y_C%20%0A%5Cend%7Bbmatrix%7D_%7Bbatchsize%20%5Chspace%7B1mm%7D%20x%20%20%5Chspace%7B1mm%7D%20vocabsize%7D&bc=White&fc=Black&im=gif&fs=12&ff=arev&edit=0)
+![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/ypred.png)
 
 The traditional softmax output and loss for a single instance would be
 
