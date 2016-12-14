@@ -78,7 +78,9 @@ The traditional softmax output and loss for a single instance would be
 ![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/softmax_output.jpg)   and   ![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/loss.jpg)
 
 Let's play with the logarithmic term in the loss function:
+
 ![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/logp_trick_final.jpg)
+
 Finally here is the how knet makes that trick:
 ```Julia
 ynorm = logp(ypred,2) # ypred .- log(sum(exp(ypred),2))
