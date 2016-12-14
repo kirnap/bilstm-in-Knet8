@@ -75,11 +75,10 @@ Here let **y <sub>pred</sub>**  be the prediction vector which has batchsize man
 
 The traditional softmax output and loss for a single instance would be
 
-![equation](http://www.sciweavers.org/tex2img.php?eq=%5Chat%7Bp_i%7D%3D%20%5Cfrac%7B%5Cexp%20y_i%7D%7B%5Csum_%7Bc%3D1%7D%5EC%20%5Cexp%20y_c%7D&bc=White&fc=Black&im=jpg&fs=12&ff=arev&edit=0)   and   ![equation](http://www.sciweavers.org/tex2img.php?eq=%5Cell%20%3D%20%5Csum_%7Bc%3D1%7D%5EC%20p_c%20%5Clog%20%5Chat%7Bp%7D_c&bc=White&fc=Black&im=gif&fs=12&ff=arev&edit=0)
+![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/softmax_output.jpg)   and   ![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/loss.jpg)
 
 Let's play with the logarithmic term in the loss function:
-![equation](http://www.sciweavers.org/tex2img.php?eq=%20%5Clog%20%5Chat%7Bp%7D_i%20%3D%20log%28e%5E%7By_i%7D%29%20-%20log%28%5Csum_k%5EC%7Be%5E%7Bx_k%7D%7D%29%20%3D%20y_i%20-%20log%28%5Csum_k%5EC%7Be%5E%7Bx_k%7D%7D%29&bc=White&fc=Black&im=gif&fs=12&ff=arev&edit=0)
-
+![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/logp_trick_final.jpg)
 Finally here is the how knet makes that trick:
 ```Julia
 ynorm = logp(ypred,2) # ypred .- log(sum(exp(ypred),2))
