@@ -81,7 +81,7 @@ Let's play with the logarithmic term in the loss function:
 
 ![equation](https://github.com/kirnap/bilstm-in-Knet8/blob/master/img/logp_trick_final.jpg)
 
-Finally here is the how knet makes that trick:
+Finally, see how [knet](https://github.com/denizyuret/Knet.jl) makes that trick:
 ```Julia
 ynorm = logp(ypred,2) # ypred .- log(sum(exp(ypred),2))
 ```
