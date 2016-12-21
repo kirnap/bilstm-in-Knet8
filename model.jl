@@ -24,7 +24,7 @@ end
 
 
 """
-Initialized the weights and biases for the stacked LSTM.
+Initializes the weights and biases for the stacked LSTM.
 atype: Array type of the machine, namely KnetArray or Array regarding of gpu usage
 hidden: Array of hidden layer configurations, e.g, [128 256] 2 layers of lstm.
 embed: Embedding size of the model
@@ -75,9 +75,9 @@ end
 
 
 """
-Go one step forward and return the final hidden state of the lstm for a given input
-parameters[2k-1] is weight, parameters[2k] is bias for the kth layer
-states[2k-1] is the hidden and states[2k] is the cell for the kth layer
+Go one step forward through the model and return the final hidden state of the final lstm for a given input
+parameters[2k-1] =  weight, parameters[2k] = bias for the kth layer
+states[2k-1] = the hidden and states[2k] = the cell for the kth layer
 """
 function sforw(parameters, states, input)
     x = input
@@ -91,18 +91,23 @@ end
 
 """
 Go forward and collect hidden states of the lstm for a sequence
-sequence is padded from begining with token <s> and end with token </s>
-returns hiddenlayers: contains the final hidden states of the forward and backward lstms in correct order,
+sequence is already padded from begining with token <s> and end with token </s>
+OUTPUT
+hiddenlayers: contains the final hidden states of the forward and backward lstms in correct order,
 """
 function bilsforw(parameters, states, sequence, atype; forwardlstm=true)
-    hiddenlayers = Array(Any, length(sequence)) # TODO: decide is it Any type or atype?
+    hiddenlayers = Array(Any, length(sequence))
 
     # if forward first item else the last item will be zeros of the same size with other items
-    traverse = (forwardlstm ? (2:length(sequence)) : (length(sequence)-1:-1:1))
+    traverse = (forwardlstm ? (1:length(sequence) - 1) : (length(sequence):-1:2))
 
     for i=traverse
         result = sforw(parameters, states, sequence[i])
-        hiddenlayers[i] = result
+        if forwardlstm
+            hiddenlayers[i+1] = result
+        else
+            hiddenlayers[i-1] = result
+        end
     end
 
     padindex = (forwardlstm ? 1 : length(hiddenlayers))
