@@ -95,7 +95,7 @@ Go forward and collect hidden states of the lstm for a sequence
 sequence is padded from begining with token <s> and end with token </s>
 returns hiddenlayers: contains the final hidden states of the forward and backward lstms in correct order,
 """
-function bilsforw(parameters, states, sequence; forwardlstm=true)
+function bilsforw(parameters, states, sequence, atype; forwardlstm=true)
     hiddenlayers = Array(Any, length(sequence)) # TODO: decide is it Any type or atype?
 
     # if forward first item else the last item will be zeros of the same size with other items
@@ -123,6 +123,19 @@ end
 
 
 """
+Softmax layer initialization,
+param[1]: softmax layer weights (hidden[final], vocab)
+param[2]: softmax layer bias (1, vocab)
+"""
+function initsoftmax(atype, hiddenfinal, vocabsize, winit)
+    param = Array(Any, 2)
+    param[1] = winit * randn(hiddenfinal, vocabsize)
+    param[2] = zeros(1, vocabsize)
+    return map(p->convert(atype, p), param)
+end
+
+
+"""
 Embeds the one-hot given sequence into dense sequence.
 Inputs: Sequence of one-hots, i.e., sequence[k] is a matrix of batchsize x vocabsize
 and embedding matrix of the size vocab x embedsize
@@ -146,13 +159,13 @@ paramdict["merge"][1],[2]: holds the weights for final prediction, and bias resp
 function loss(paramdict, statedict, sequence, atype)
     total = 0.0
     count = 0
-    # TODO calculate embedded sequence here and then move to lstm layers
-    fhiddens = bilsforw(paramdict["forw"], statedict["forw"], sequence) 
-    bhiddens = bilsforw(paramdict["back"], statedict["back"], sequence; forwardlstm=false)
+    embedded_sequence = embed_sequence(model[:embedding], sequence, atype)
+    fhiddens = bilsforw(paramdict[:forw], statedict[:forw], embedded_sequence)
+    bhiddens = bilsforw(paramdict[:back], statedict[:back], embedded_sequence; forwardlstm=false)
 
     # go through the sequence one token at a time
     for t=1:length(fhiddens)
-        ypred = hcat(fidden[t], bhidden[t]) * paramdict["merge"][1] .+ paramdict["merge"][2] # merge the hidden layers
+        ypred = hcat(fidden[t], bhidden[t]) * paramdict[:merge][1] .+ paramdict[:merge][2] # merge the hidden layers
         ynorm = logp(ypred, 2)
         ygold = convert(atype, sequence[t])  # if KnetArray does not support linear indexing multiplication seems better alternative
         total += sum(ygold .* ynorm)
