@@ -23,7 +23,6 @@ type LSTM
 end
 
 
-# TODO: implement embedding matrix s.t. it is of the size <vocab X embed>, decision of the KnetArray or not
 """
 Initialized the weights and biases for the stacked LSTM.
 atype: Array type of the machine, namely KnetArray or Array regarding of gpu usage
