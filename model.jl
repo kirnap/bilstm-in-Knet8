@@ -160,12 +160,12 @@ function loss(paramdict, statedict, sequence, atype)
     total = 0.0
     count = 0
     embedded_sequence = embed_sequence(model[:embedding], sequence, atype)
-    fhiddens = bilsforw(paramdict[:forw], statedict[:forw], embedded_sequence)
-    bhiddens = bilsforw(paramdict[:back], statedict[:back], embedded_sequence; forwardlstm=false)
+    fhiddens = bilsforw(paramdict[:forw], statedict[:forw], embedded_sequence, atype)
+    bhiddens = bilsforw(paramdict[:back], statedict[:back], embedded_sequence, atype; forwardlstm=false)
 
     # go through the sequence one token at a time
     for t=1:length(fhiddens)
-        ypred = hcat(fidden[t], bhidden[t]) * paramdict[:merge][1] .+ paramdict[:merge][2] # merge the hidden layers
+        ypred = hcat(fhiddens[t], bhiddens[t]) * paramdict[:merge][1] .+ paramdict[:merge][2] # merge the hidden layers
         ynorm = logp(ypred, 2)
         ygold = convert(atype, sequence[t])  # if KnetArray does not support linear indexing multiplication seems better alternative
         total += sum(ygold .* ynorm)
