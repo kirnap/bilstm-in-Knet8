@@ -26,7 +26,8 @@ When you construct a data out of that test sentences the sequence will be an arr
 [The, Doga, Life],
 [dog, is, is],
 [ran, a short],
-[out, in, let], 
+[out, name, let],
+[of, in, us],
 [memory, Turkish, code], 
 [</s>, </s>, </s>]]
 ```
@@ -61,10 +62,40 @@ julia> sequence[4]
 
 TODO:put additional futures of ```Data```
 
-## Model
-TODO: put the model definition here
-
 Ps: Since it is written for my own understanding and testing purpose, I am not recommending to read preproptest.jl file, unless you want to help me to create more sophisticated test coverage.
+
+## Model
+---
+The model used in this task is Bidirectional LSTM. If you are not comfortable with RNNs and LSTMs, I highly recommend [Colah's](http://colah.github.io/posts/2015-08-Understanding-LSTMs/) nice blog post.
+Assuming, you understand the internal dynamics of LSTMs, we can dive into the details of the model. 
+Suppose we have an original input sequence with tokens **x<sub>1</sub>**, **x<sub>2</sub>**, **x<sub>3</sub>**.Recall from ```Data```  preprocessing step will  pad the sequence by start and end tokens, therefore the sequence becomes  **< s >**,**x<sub>1</sub>**, **x<sub>2</sub>**, **x<sub>3</sub>**, **< /s >**.
+Remember our task was to find the subsitute token by reading the input normal and reverse orders. That is achieved in 4 steps:
+
+1)  Sequence is embedded from sparse one-hots to dense vectors.
+2)  Forward LSTM reads the input, and the hidden states are collected at each time step,
+3)  Backward LSTM reads the input, and the hidden states are collected at each time step.
+4)  Merge layer generates a prediction at each time step by taking hidden states of forward and backward LSTMs.
+
+Let's go deeper in each step:
+#### 1) **Sequence Embedding:** 
+This is just a matrix multiplication:
+TODO: put a figure here
+Knet success embedding with the following code:
+```Julia
+function embed_sequence(parameter, sequence, atype)
+    embedded_sequence = Array(atype, length(sequence))
+    for i=1:length(sequence)
+        embedded_sequence[i] = sequence[i] * parameter
+    end
+    return embedded_sequence
+end
+```
+It takes whole sequence once and creates embedded sequence array.
+
+#### 2)**Forward LSTM reading**
+The role of forward LSTM in overall task is to provide a knowledge of the next input token based on the previous sequence reading. Thus, it does not need the end of sentence token, **< /s >**, because there is no next of that token. As a result the following picture obtained during the forward lstm hidden layer collection:
+
+
 
 
 ## Loss function implementation details
