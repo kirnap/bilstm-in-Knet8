@@ -6,7 +6,7 @@ function initparams(atype, layerconfig, embedsize, vocab, winit; single_embeddin
         parameters = Array(Any, 4*length(layerconfig)+4)
         parameters[end] = winit * randn(vocab, embedsize) # backward lstm embedding
         parameters[end-1] = winit * randn(vocab, embedsize) # forward lstm embedding
-        parameters[end-2] =  winit * randn(layerconfig[end], vocab)# final layer weight
+        parameters[end-2] =  winit * randn(layerconfig[end]*2, vocab)# final layer weight
         parameters[end-3] = zeros(1, vocab) # final layer bias
     else
         parameters = Array(Any, 4*length(layerconfig)+3)
@@ -63,3 +63,67 @@ function resetstate!(states, atype)
         convert(atype, states[k])
     end
 end
+
+
+function lstm(weight, bias, hidden, cell, input)
+    gates   = hcat(input,hidden) * weight .+ bias
+    hsize   = size(hidden,2)
+    forget  = sigm(gates[:,1:hsize])
+    ingate  = sigm(gates[:,1+hsize:2hsize])
+    outgate = sigm(gates[:,1+2hsize:3hsize])
+    change  = tanh(gates[:,1+3hsize:end])
+    cell    = cell .* forget + ingate .* change
+    hidden  = outgate .* tanh(cell)
+    return (hidden,cell)
+end
+
+
+# multi layer lstm forward function
+function forward(parameters, states, input)
+    x = input
+    for i=1:2:length(states)
+        (states[i], states[i+1]) = lstm(parameters[i], parameters[i+1], states[i], states[i+1], x)
+        x = states[i]
+    end
+    return x
+end
+
+
+# forward reads from 1 to n-1, backward reads from n to 2
+# that loss assumes double embedding
+function loss(parameters, states, sequence)
+    total = 0.0
+    count = 0
+    atype = typeof(AutoGrad.getval(parameters[1]))
+    hlayers = length(states) / 4
+    hlayers = convert(Int, hlayers)
+
+    # forward lstm
+    fhiddens = Array(Any, length(sequence))
+    for i=1:length(sequence)-1
+        input = convert(atype, sequence[i])
+        x = input * parameters[end-1]
+        fhiddens[i+1] = forward(parameters[1:2*hlayers], states[1:2*hlayers], x)
+    end
+    padding = zeros(size(fhiddens[2]))
+    fhiddens[1] = convert(atype, padding)
+
+    # bacward lstm
+    bhiddens = Array(Any, length(sequence))
+    for i=length(sequence):-1:2
+        input = convert(atype, sequence[i])
+        x = input * parameters[end]
+        bhiddens[i-1] = forward(parameters[2*hlayers+1:4*hlayers], states[2*hlayers+1:4*hlayers], x)
+    end
+    bhiddens[end] = convert(atype, padding)
+    for i=1:length(fhiddens)
+        ypred = hcat(fhiddens[i], bhiddens[i]) * parameters[end-2] .+ parameters[end-3]
+        ynorm = logp(ypred, 2)
+        ygold = convert(atype, sequence[i])
+        count += size(ygold, 1)
+        total += sum(ygold .* ynorm)
+    end
+    return - total / count
+end
+
+lossgradient = grad(loss)

@@ -160,7 +160,7 @@ paramdic[:forw]: holds the forward lstm variables
 paramdict[:back]: holds the backward lstm variables
 paramdict[:merge][1],[2]: holds the weights for final prediction, and bias respectively.
 """
-function loss(paramdict, statedict, sequence)
+function loss_old(paramdict, statedict, sequence)
     total = 0.0
     count = 0
     atype = typeof(AutoGrad.getval(paramdict[:forw][1]))
