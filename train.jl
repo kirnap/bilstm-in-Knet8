@@ -17,6 +17,7 @@ function main(args=ARGS)
         ("--decay"; arg_type=Float64; default=0.9; help="Learning rate decay.")
         ("--lr"; arg_type=Float64; default=4.0; help="Initial learning rate.")
         ("--single_embedding"; default=false)
+        ("--gcheck"; arg_type=Int; default=0; help="Check N random gradients.")
     end
     isa(args, AbstractString) && (args=split(args))
     o = parse_args(args, s; as_symbols=true)
@@ -37,7 +38,10 @@ function main(args=ARGS)
 
     param = initparams(o[:atype], o[:layerconfig], o[:embedding], vocabsize, o[:winit]; single_embedding=o[:single_embedding])
     state = initstates(o[:atype], o[:layerconfig], o[:batchsize])
-    initial_loss = loss(param, state, sequence)
-    println("Initial loss is $initial_loss")
+    #initial_loss = loss(param, state, sequence)
+    #println("Initial loss is $initial_loss")
+    if o[:gcheck] > 0
+        gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
+    end
 end
 main(ARGS)
