@@ -5,6 +5,7 @@
 garbage.jl
 backup*
 foo*
+garbage2.jl
 
 ### macOS ###
 *.DS_Store
