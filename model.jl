@@ -9,7 +9,7 @@ nlayers: Number of stacked lstm layers
 states: Holds the cell and hidden states as state[2k-1,2k]: hidden and cell
 """
 type LSTM
-    parameters::Array{Any, 1}
+    parameters
     nlayers::Int
     states::Array
     atype::DataType
@@ -59,6 +59,29 @@ end
 
 
 """
+Embedding matrix initialization it is of the size (vocab x embed)
+The input to lstm units would be x * W where W is embedding and x is traditional one-hots.
+"""
+function initembedding(atype, embedsize, vocabsize, winit)
+    embedding = winit * randn(vocabsize, embedsize)
+    return convert(atype, embedding)
+end
+
+
+"""
+Softmax layer initialization,
+param[1]: softmax layer weights (hidden[final], vocab)
+param[2]: softmax layer bias (1, vocab)
+"""
+function initsoftmax(atype, hiddenfinal, vocabsize, winit)
+    param = Array(Any, 2)
+    param[1] = winit * randn(hiddenfinal, vocabsize)
+    param[2] = zeros(1, vocabsize)
+    return map(p->convert(atype, p), param)
+end
+
+
+"""
 forward implementation for a single layer lstm
 """
 function lstm(weight, bias, hidden, cell, input)
@@ -75,7 +98,7 @@ end
 
 
 """
-Go one step forward through the model and return the final hidden state of the final lstm for a given input
+Go one step forward through the stacked LSTMs, then return the final hidden state of the final lstm layer for a given input.
 parameters[2k-1] =  weight, parameters[2k] = bias for the kth layer
 states[2k-1] = the hidden and states[2k] = the cell for the kth layer
 """
@@ -109,33 +132,10 @@ function bilsforw(parameters, states, sequence, atype; forwardlstm=true)
             hiddenlayers[i-1] = result
         end
     end
-
     padindex = (forwardlstm ? 1 : length(hiddenlayers))
     padding = convert(atype, zeros(eltype(hiddenlayers[3]), size(hiddenlayers[3])))
     hiddenlayers[padindex] = padding
     return hiddenlayers
-end
-
-"""
-Embedding matrix initialization it is of the size (vocab x embed)
-The input to lstm units would be x * W where W is embedding and x is traditional one-hots.
-"""
-function initembedding(atype, embedsize, vocabsize, winit)
-    embedding = winit * randn(vocabsize, embedsize)
-    return convert(atype, embedding)
-end
-
-
-"""
-Softmax layer initialization,
-param[1]: softmax layer weights (hidden[final], vocab)
-param[2]: softmax layer bias (1, vocab)
-"""
-function initsoftmax(atype, hiddenfinal, vocabsize, winit)
-    param = Array(Any, 2)
-    param[1] = winit * randn(hiddenfinal, vocabsize)
-    param[2] = zeros(1, vocabsize)
-    return map(p->convert(atype, p), param)
 end
 
 
@@ -156,27 +156,33 @@ end
 
 """
 Calculated the cross-entropy loss function through a given sequence and returns the loss per token
-paramdic["forw"]: holds the forward lstm variables
-paramdict["back"]: holds the backward lstm variables
-paramdict["merge"][1],[2]: holds the weights for final prediction, and bias respectively.
+paramdic[:forw]: holds the forward lstm variables
+paramdict[:back]: holds the backward lstm variables
+paramdict[:merge][1],[2]: holds the weights for final prediction, and bias respectively.
 """
-function loss(paramdict, statedict, sequence, atype)
+function loss(paramdict, statedict, sequence)
     total = 0.0
     count = 0
-    embedded_sequence = embed_sequence(model[:embedding], sequence, atype)
-    fhiddens = bilsforw(paramdict[:forw], statedict[:forw], embedded_sequence, atype)
-    bhiddens = bilsforw(paramdict[:back], statedict[:back], embedded_sequence, atype; forwardlstm=false)
+    atype = typeof(AutoGrad.getval(paramdict[:forw][1]))
+    #embedded_sequence = embed_sequence(model[:embedding], sequence, atype)
+    s = sequence[1] * model[:embedding]
+    #fhiddens = bilsforw(paramdict[:forw], statedict[:forw], embedded_sequence, atype)
+    #bhiddens = bilsforw(paramdict[:back], statedict[:back], embedded_sequence, atype; forwardlstm=false)
 
     # go through the sequence one token at a time
-    for t=1:length(fhiddens)
-        ypred = hcat(fhiddens[t], bhiddens[t]) * paramdict[:merge][1] .+ paramdict[:merge][2] # merge the hidden layers
+    for t=1:8 #length(fhiddens)
+        fhiddens = sforw(paramdict[:forw], statedict[:forw], s)
+        bhiddens = sforw(paramdict[:back], statedict[:back], s)
+        ypred = hcat(fhiddens, bhiddens) * paramdict[:merge][1] .+ paramdict[:merge][2] # merge the hidden layers
         ynorm = logp(ypred, 2)
-        ygold = convert(atype, sequence[t])  # if KnetArray does not support linear indexing multiplication seems better alternative
+        ygold = convert(atype, sequence[1])  # if KnetArray does not support linear indexing multiplication seems better alternative
         total += sum(ygold .* ynorm)
         count += size(ygold, 1) # each row corresponds to one instance in minibatch        
     end
     return -total / count     # TODO: check with the count calculation to test loss per token is calculated
 end
+
+
 
 # Here are the remaining TODOs:
 # - Check with the weight initializations s.t. the embedding matrix is still embedding, (KnetArray support?)
