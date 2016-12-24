@@ -25,10 +25,32 @@ function update!(param, state, sequence; lr=1.0, gclip=0.0)
 end
 
 
+function train!(param, data, o)
+    state = initstates(o[:atype], o[:layerconfig], o[:batchsize])
+
+    # test purpose!
+    sequence = data[1]
+
+    initial_loss = loss(param, state, sequence)
+    println("Initial loss is $initial_loss")
+    if o[:gcheck] > 0
+        gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
+    end
+    update!(param, state, sequence)
+
+    # test purpose!
+    next_loss = loss(param, state, sequence)
+    println("Next loss is $next_loss")
+end
+
+
 function main(args=ARGS)
     s = ArgParseSettings()
     s.exc_handler = ArgParse.debug_handler
     @add_arg_table s begin
+        ("--trainfile"; default="readme_data.txt" ;help="Training file")
+        ("--devfile"; help="Dev file")
+        ("--testfile"; help="Test file")
         ("--loadfile"; help="Initialize model from file")
         ("--savefile"; help="Save final model to file")
         ("--atype"; default=(gpu()>=0 ? "KnetArray{Float32}" : "Array{Float32}"); help="array type: Array for cpu, KnetArray for gpu")
@@ -51,20 +73,14 @@ function main(args=ARGS)
     end
 
     # Data preperation
-    sdata = Data("readme_data.txt"; batchsize=o[:batchsize])
-    vocabsize = length(sdata.word_to_index)
+    tdata = Data(o[:trainfile]; batchsize=o[:batchsize])
+    vocabsize = length(tdata.word_to_index)
     sequences = Any[];
-    for item in sdata
+    for item in tdata
         push!(sequences, item)
     end
-    sequence = sequences[1]
 
     param = initparams(o[:atype], o[:layerconfig], o[:embedding], vocabsize, o[:winit]; single_embedding=o[:single_embedding])
-    state = initstates(o[:atype], o[:layerconfig], o[:batchsize])
-    #initial_loss = loss(param, state, sequence)
-    #println("Initial loss is $initial_loss")
-    if o[:gcheck] > 0
-        gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
-    end
+    train!(param, sequences, o)
 end
 main(ARGS)
