@@ -2,6 +2,29 @@ using Knet, ArgParse
 include("model2.jl")
 include("preprocess.jl")
 
+
+function update!(param, state, sequence; lr=1.0, gclip=0.0)
+    gloss = lossgradient(param, state, sequence)
+    gscale = lr
+    if gclip > 0
+        gnorm = sqrt(mapreduce(sumabs2, +, 0, gloss))
+        if gnorm > gclip
+            gscale *= gclip / gnorm
+        end
+    end
+
+    for k=1:length(param)
+        axpy!(-gscale, gloss[k], param[k])
+    end
+
+    isa(state, Vector{Any}) || error("State should not be Boxed.")
+    # TODO: is that really needed?
+    for i=1:length(state)
+        state[i] = AutoGrad.getval(state[i])
+    end
+end
+
+
 function main(args=ARGS)
     s = ArgParseSettings()
     s.exc_handler = ArgParse.debug_handler
