@@ -1,4 +1,4 @@
-using Knet, ArgParse
+using Knet, ArgParse, JLD
 include("model2.jl")
 include("preprocess.jl")
 
@@ -16,7 +16,6 @@ end
 
 
 function update!(param, state, sequence; lr=1.0, gclip=0.0)
-    gs = deepcopy(state)
     gloss = lossgradient(param, state, sequence)
     gscale = lr
     if gclip > 0
@@ -82,6 +81,10 @@ function main(args=ARGS)
     tdata = Data(o[:trainfile]; batchsize=o[:batchsize])
     vocabsize = length(tdata.word_to_index)
 
+    # Devdata preperation
+    dfile = (o[:devfile] != nothing ? o[:devfile] : o[:trainfile])
+    ddata = Data(dfile; batchsize=o[:batchsize], word_to_index=tdata.word_to_index)
+
 
     # Model initialization
     param = initparams(o[:atype], o[:layerconfig], o[:embedding], vocabsize, o[:winit]; single_embedding=o[:single_embedding])
@@ -90,10 +93,28 @@ function main(args=ARGS)
     # test purpose!
     initial_loss = test(param, state, tdata; perp=true)
     println("Initial loss is $initial_loss")
+    devloss = test(param, state, ddata; perp=true)
+    println("Initial dev loss is $devloss")
+    devlast = devbest = devloss
+
+    # training started
     for epoch=1:o[:epochs]
         train!(param, state, tdata, o)
-        nloss = test(param, state, tdata; perp=true)
-        println("Loss for epoch $epoch : $nloss")
+        devloss = test(param, state, ddata; perp=true)
+        println("Loss for epoch $epoch : $devloss")
+        # check whether model becomes better
+        if devloss < devbest
+            devbest = devloss
+            if o[:savefile] != nothing
+                save(o[:savefile], "model", param, "vocab", tdata.word_to_index)
+            end
+        end
+
+        if devloss > devlast
+            o[:lr] *= o[:decay]
+            info("New learning rate: $(o[:lr])")
+        end
+        devlast = devloss
     end
 end
 main(ARGS)
