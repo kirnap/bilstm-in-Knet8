@@ -3,7 +3,20 @@ include("model2.jl")
 include("preprocess.jl")
 
 
+function test(param, state, data; perp=false)
+    totloss = 0.0
+    numofbatch = 0
+    for sequence in data
+        val = loss(param, state, sequence)
+        totloss += (perp? exp(val) : val)
+        numofbatch += 1
+    end
+    return totloss / numofbatch
+end
+
+
 function update!(param, state, sequence; lr=1.0, gclip=0.0)
+    gs = deepcopy(state)
     gloss = lossgradient(param, state, sequence)
     gscale = lr
     if gclip > 0
@@ -25,22 +38,14 @@ function update!(param, state, sequence; lr=1.0, gclip=0.0)
 end
 
 
-function train!(param, data, o)
-    state = initstates(o[:atype], o[:layerconfig], o[:batchsize])
-
-    # test purpose!
-    sequence = data[1]
-
-    initial_loss = loss(param, state, sequence)
-    println("Initial loss is $initial_loss")
-    if o[:gcheck] > 0
-        gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
+function train!(param, state, data, o)
+    for sequence in data
+        # Only open for gradient check
+        #if o[:gcheck] > 0
+        #    gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
+        #end
+        update!(param, state, sequence; lr=o[:lr], gclip=o[:gclip])
     end
-    update!(param, state, sequence)
-
-    # test purpose!
-    next_loss = loss(param, state, sequence)
-    println("Next loss is $next_loss")
 end
 
 
@@ -63,6 +68,7 @@ function main(args=ARGS)
         ("--lr"; arg_type=Float64; default=4.0; help="Initial learning rate.")
         ("--single_embedding"; default=false)
         ("--gcheck"; arg_type=Int; default=0; help="Check N random gradients.")
+        ("--gclip"; arg_type=Float64; default=0.0; help="Value to clip the gradient norm at.")
     end
     isa(args, AbstractString) && (args=split(args))
     o = parse_args(args, s; as_symbols=true)
@@ -75,12 +81,19 @@ function main(args=ARGS)
     # Data preperation
     tdata = Data(o[:trainfile]; batchsize=o[:batchsize])
     vocabsize = length(tdata.word_to_index)
-    sequences = Any[];
-    for item in tdata
-        push!(sequences, item)
-    end
 
+
+    # Model initialization
     param = initparams(o[:atype], o[:layerconfig], o[:embedding], vocabsize, o[:winit]; single_embedding=o[:single_embedding])
-    train!(param, sequences, o)
+    state = initstates(o[:atype], o[:layerconfig], o[:batchsize])
+
+    # test purpose!
+    initial_loss = test(param, state, tdata; perp=true)
+    println("Initial loss is $initial_loss")
+    for epoch=1:o[:epochs]
+        train!(param, state, tdata, o)
+        nloss = test(param, state, tdata; perp=true)
+        println("Loss for epoch $epoch : $nloss")
+    end
 end
 main(ARGS)
