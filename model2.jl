@@ -106,17 +106,18 @@ function loss(parameters, states, sequence)
         x = input * parameters[end-1]
         fhiddens[i+1] = forward(parameters[1:2*hlayers], states[1:2*hlayers], x)
     end
-    padding = zeros(size(fhiddens[2]))
-    fhiddens[1] = convert(atype, padding)
+    fhiddens[1] = convert(atype, zeros(size(fhiddens[2])))
 
-    # bacward lstm
+    # backward lstm
     bhiddens = Array(Any, length(sequence))
     for i=length(sequence):-1:2
         input = convert(atype, sequence[i])
         x = input * parameters[end]
         bhiddens[i-1] = forward(parameters[2*hlayers+1:4*hlayers], states[2*hlayers+1:4*hlayers], x)
     end
-    bhiddens[end] = convert(atype, padding)
+    bhiddens[end] = convert(atype, zeros(size(bhiddens[2])))
+
+    # merge layer
     for i=1:length(fhiddens)
         ypred = hcat(fhiddens[i], bhiddens[i]) * parameters[end-2] .+ parameters[end-3]
         ynorm = logp(ypred, 2)
