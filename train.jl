@@ -101,7 +101,7 @@ function main(args=ARGS)
     for epoch=1:o[:epochs]
         train!(param, state, tdata, o)
         devloss = test(param, state, ddata; perp=true)
-        println("Loss for epoch $epoch : $devloss")
+        println("Dev loss for epoch $epoch : $devloss")
         # check whether model becomes better
         if devloss < devbest
             devbest = devloss
