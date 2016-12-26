@@ -48,6 +48,36 @@ function train!(param, state, data, o)
 end
 
 
+function gensub(parameters, state, sequence, vocabulary; single_embedding=false)
+    result = Array(Any, length(sequence))
+    hl = length(states) / 4
+    hl = convert(Int, hl)
+    
+    fhiddens = Array(Any, length(sequence))
+    for i=1:length(sequence)
+        input = oftype(parameters[1], sequence[i])
+        x = input * parameters[end-1]
+        fhiddens[i+1] = forward(paremeters[1:2*hl], state[1:2*hl], x)
+    end
+    fhiddens[1] = oftype(parameters[1], zeros(size(fhiddens[2])))
+
+    # backward lstm
+    bhiddens = Array(Any, length(sequence))    
+    for i=length(sequence):-1:2
+        input = oftype(parameters[1], sequence[i])
+        x = input * parameters[end]
+        bhiddens[i-1] = forward(parameters[2*hl+1:4*hl], states[2*hl+1:4*hlayers], x)
+    end
+    bhiddens[end] = oftpye(parameters[1], zeros(size(bhiddens[2])))
+
+    for i=1:length(fhiddens)
+        ypred = hcat(fhiddens[i], bhiddens[i]) * parameters[end-2] .+ parameters[end-3]
+        ynorm = logp(ypred, 2)
+        result[i] = exp(ynorm)
+    end
+    return result
+end
+
 function main(args=ARGS)
     s = ArgParseSettings()
     s.exc_handler = ArgParse.debug_handler
