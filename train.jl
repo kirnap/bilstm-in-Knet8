@@ -120,6 +120,7 @@ function main(args=ARGS)
             info("New learning rate: $(o[:lr])")
         end
         devlast = devloss
+        flush(STDOUT)
     end
 end
 main(ARGS)
