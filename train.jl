@@ -102,6 +102,11 @@ function main(args=ARGS)
         train!(param, state, tdata, o)
         devloss = test(param, state, ddata; perp=true)
         println("Dev loss for epoch $epoch : $devloss")
+
+        if (epoch % 5) == 0
+            trainloss = test(param, state, tdata; perp=true)
+            println("Train loss for epoch $epoch : $trainloss")
+        end
         # check whether model becomes better
         if devloss < devbest
             devbest = devloss
