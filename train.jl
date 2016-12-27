@@ -7,7 +7,7 @@ function test(param, state, data; perp=false)
     totloss = 0.0
     numofbatch = 0
     for sequence in data
-        val = loss(param, state, sequence)
+        val = loss(param, deepcopy(state), sequence) #val = loss(param, state, sequence)
         totloss += (perp? exp(val) : val)
         numofbatch += 1
     end
@@ -16,7 +16,7 @@ end
 
 
 function update!(param, state, sequence; lr=1.0, gclip=0.0)
-    gloss = lossgradient(param, state, sequence)
+    gloss = lossgradient(param, deepcopy(state), sequence) #    gloss = lossgradient(param, state, sequence)
     gscale = lr
     if gclip > 0
         gnorm = sqrt(mapreduce(sumabs2, +, 0, gloss))
@@ -40,43 +40,48 @@ end
 function train!(param, state, data, o)
     for sequence in data
         # Only open for gradient check
-        #if o[:gcheck] > 0
-        #    gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
-        #end
-        update!(param, state, sequence; lr=o[:lr], gclip=o[:gclip])
+        if o[:gcheck] > 0
+            gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
+        end
+        update!(param, state, copy(sequence); lr=o[:lr], gclip=o[:gclip]) #update!(param, state, sequence; lr=o[:lr], gclip=o[:gclip])
     end
 end
 
 
-function gensub(parameters, state, sequence, vocabulary; single_embedding=false)
+function gensub(parameters, states, sequence, index_to_word)
     result = Array(Any, length(sequence))
-    hl = length(states) / 4
-    hl = convert(Int, hl)
-    
+    hlayers = length(states) / 4
+    hlayers = convert(Int, hlayers)
+
+    # forward lstm
     fhiddens = Array(Any, length(sequence))
-    for i=1:length(sequence)
+    t1 = states[1:2*hlayers]
+    for i=1:length(sequence)-1
         input = oftype(parameters[1], sequence[i])
         x = input * parameters[end-1]
-        fhiddens[i+1] = forward(paremeters[1:2*hl], state[1:2*hl], x)
+        fhiddens[i+1] = forward(parameters[1:2*hlayers], t1, x)
     end
-    fhiddens[1] = oftype(parameters[1], zeros(size(fhiddens[2])))
+    fhiddens[1] = oftype(fhiddens[2], zeros(size(fhiddens[2])))
 
     # backward lstm
-    bhiddens = Array(Any, length(sequence))    
+    bhiddens = Array(Any, length(sequence))
+    t2 = states[2*hlayers+1:4*hlayers]
     for i=length(sequence):-1:2
         input = oftype(parameters[1], sequence[i])
         x = input * parameters[end]
-        bhiddens[i-1] = forward(parameters[2*hl+1:4*hl], states[2*hl+1:4*hlayers], x)
+        bhiddens[i-1] = forward(parameters[2*hlayers+1:4*hlayers], t2, x)
     end
-    bhiddens[end] = oftpye(parameters[1], zeros(size(bhiddens[2])))
+    bhiddens[end] = oftype(bhiddens[end-1], zeros(size(bhiddens[2])))
 
+    # merge layer
     for i=1:length(fhiddens)
         ypred = hcat(fhiddens[i], bhiddens[i]) * parameters[end-2] .+ parameters[end-3]
         ynorm = logp(ypred, 2)
         result[i] = exp(ynorm)
     end
-    return result
+    return map(k->index_to_word[indmax(result[k])], 1:length(result))
 end
+
 
 function main(args=ARGS)
     s = ArgParseSettings()
@@ -120,16 +125,17 @@ function main(args=ARGS)
     param = initparams(o[:atype], o[:layerconfig], o[:embedding], vocabsize, o[:winit]; single_embedding=o[:single_embedding])
     state = initstates(o[:atype], o[:layerconfig], o[:batchsize])
 
-    # test purpose!
-    initial_loss = test(param, state, tdata; perp=true)
+
+    # inital loss value
+    initial_loss = test(param, state, tdata; perp=true) #initial_loss = test(param, deepcopy(state), tdata; perp=true) 
     println("Initial loss is $initial_loss")
-    devloss = test(param, state, ddata; perp=true)
+    devloss = test(param, state, ddata; perp=true) #devloss = test(param, deepcopy(state), ddata; perp=true)
     println("Initial dev loss is $devloss")
     devlast = devbest = devloss
 
     # training started
     for epoch=1:o[:epochs]
-        train!(param, state, tdata, o)
+        train!(param, state, tdata, o) # train!(param, deepcopy(state), tdata, o)
         devloss = test(param, state, ddata; perp=true)
         println("Dev loss for epoch $epoch : $devloss")
 
