@@ -40,7 +40,6 @@ end
 
 function printsub(parameters, states, sequence, index_to_word; lp=true)
     pbvec = gensub(parameters, states, sequence; lp=lp)
-    assert(length(pbvec) == length(sequence))
     for i=1:length(sequence)
         subs = zip(index_to_word, pbvec[i])
         index = find(x->x==true, sequence[i])
