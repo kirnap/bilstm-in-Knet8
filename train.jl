@@ -1,6 +1,7 @@
 using Knet, ArgParse, JLD
 include("model2.jl")
 include("preprocess.jl")
+include("generator.jl")
 
 
 function test(param, state, data; perp=false)
@@ -45,41 +46,6 @@ function train!(param, state, data, o)
         end
         update!(param, state, copy(sequence); lr=o[:lr], gclip=o[:gclip]) #update!(param, state, sequence; lr=o[:lr], gclip=o[:gclip])
     end
-end
-
-
-function gensub(parameters, states, sequence, index_to_word)
-    result = Array(Any, length(sequence))
-    hlayers = length(states) / 4
-    hlayers = convert(Int, hlayers)
-
-    # forward lstm
-    fhiddens = Array(Any, length(sequence))
-    t1 = states[1:2*hlayers]
-    for i=1:length(sequence)-1
-        input = oftype(parameters[1], sequence[i])
-        x = input * parameters[end-1]
-        fhiddens[i+1] = forward(parameters[1:2*hlayers], t1, x)
-    end
-    fhiddens[1] = oftype(fhiddens[2], zeros(size(fhiddens[2])))
-
-    # backward lstm
-    bhiddens = Array(Any, length(sequence))
-    t2 = states[2*hlayers+1:4*hlayers]
-    for i=length(sequence):-1:2
-        input = oftype(parameters[1], sequence[i])
-        x = input * parameters[end]
-        bhiddens[i-1] = forward(parameters[2*hlayers+1:4*hlayers], t2, x)
-    end
-    bhiddens[end] = oftype(bhiddens[end-1], zeros(size(bhiddens[2])))
-
-    # merge layer
-    for i=1:length(fhiddens)
-        ypred = hcat(fhiddens[i], bhiddens[i]) * parameters[end-2] .+ parameters[end-3]
-        ynorm = logp(ypred, 2)
-        result[i] = exp(ynorm)
-    end
-    return map(k->index_to_word[indmax(result[k])], 1:length(result))
 end
 
 
