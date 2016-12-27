@@ -101,19 +101,24 @@ function loss(parameters, states, sequence)
 
     # forward lstm
     fhiddens = Array(Any, length(sequence))
+    t1 = states[1:2*hlayers]
     for i=1:length(sequence)-1
         input = convert(atype, sequence[i])
         x = input * parameters[end-1]
-        fhiddens[i+1] = forward(parameters[1:2*hlayers], states[1:2*hlayers], x)
+        fhiddens[i+1] = forward(parameters[1:2*hlayers], t1, x)
+        #(prev_1 == t1) && println("State is not being modified")
+        #(fhiddens[i+1] == t1[1]) && println("I get the correct hidden")
+        #prev_1 = t1[1:end]
     end
     fhiddens[1] = convert(atype, zeros(size(fhiddens[2])))
 
     # backward lstm
     bhiddens = Array(Any, length(sequence))
+    t2 = states[2*hlayers+1:4*hlayers]
     for i=length(sequence):-1:2
         input = convert(atype, sequence[i])
         x = input * parameters[end]
-        bhiddens[i-1] = forward(parameters[2*hlayers+1:4*hlayers], states[2*hlayers+1:4*hlayers], x)
+        bhiddens[i-1] = forward(parameters[2*hlayers+1:4*hlayers], t2, x)
     end
     bhiddens[end] = convert(atype, zeros(size(bhiddens[2])))
 
