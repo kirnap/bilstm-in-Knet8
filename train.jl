@@ -113,7 +113,8 @@ function main(args=ARGS)
         if devloss < devbest
             devbest = devloss
             if o[:savefile] != nothing
-                save(o[:savefile], "model", param, "vocab", tdata.word_to_index)
+                saveparam = map(p->Array{Float32}, param)
+                save(o[:savefile], "model", saveparam, "vocab", tdata.word_to_index, "config", o)
             end
         end
 
