@@ -91,7 +91,7 @@ end
 
 # forward reads from 1 to n-1, backward reads from n to 2
 # that loss assumes double embedding
-# sequence corresponds the minitbatch in the literature
+# sequence corresponds the n minitbatches in the literature
 function loss(parameters, states, sequence)
     total = 0.0
     count = 0
