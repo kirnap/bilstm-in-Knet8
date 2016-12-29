@@ -1,7 +1,7 @@
 using Knet, ArgParse, JLD
 include("model2.jl")
 include("preprocess.jl")
-include("generator.jl")
+#include("generator.jl")
 
 
 function test(param, state, data; perp=false)
@@ -77,6 +77,7 @@ function main(args=ARGS)
     for (k,v) in o
         println("$k => $v")
     end
+    !o[:single_embedding] && println("Double embedding is used\n")
 
     # Data preperation
     tdata = Data(o[:trainfile]; batchsize=o[:batchsize])
@@ -113,7 +114,7 @@ function main(args=ARGS)
         if devloss < devbest
             devbest = devloss
             if o[:savefile] != nothing
-                saveparam = map(p->Array{Float32}, param)
+                saveparam = map(p->convert(Array{Float32}, p), param)
                 save(o[:savefile], "model", saveparam, "vocab", tdata.word_to_index, "config", o)
             end
         end
