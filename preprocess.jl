@@ -25,6 +25,7 @@ function Data(datafile; word_to_index=nothing, vocabfile=nothing, serve_type="bi
     existing_vocab = (word_to_index != nothing)
     if !existing_vocab
         word_to_index = Dict{AbstractString, Int}(SOS=>1, EOS=>2, UNK=>3)
+        vocabfile != nothing && info("Working with provided vocabfile : $vocabfile")
         vocabfile != nothing && (V = vocab_from_file(vocabfile))
     end
 
