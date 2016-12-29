@@ -1,7 +1,7 @@
 # open the following 3 lines in case you need to use stand-alone substitute generation
-#using Knet, JLD
-#include("model2.jl")
-#include("preprocess.jl")
+using Knet, JLD
+include("model2.jl")
+include("preprocess.jl")
 
 function gensub(parameters, states, sequence; lp=false)
     result = Array(Any, length(sequence))
@@ -50,7 +50,7 @@ function printsub(parameters, states, sequence, index_to_word; lp=true)
         end
         println()
     end
-    return pbvec
+    # return pbvec
 end
 
 function test()
