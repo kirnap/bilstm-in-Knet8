@@ -1,7 +1,9 @@
+# Single embedding training file
 using Knet, ArgParse, JLD
 include("model3.jl")
 include("preprocess.jl")
-include("generator.jl")
+#include("generator.jl")
+
 
 
 function test(param, state, data; perp=false)
@@ -77,6 +79,7 @@ function main(args=ARGS)
     for (k,v) in o
         println("$k => $v")
     end
+    println("Embedding config is single embedding\n")
 
     # Data preperation
     tdata = Data(o[:trainfile]; batchsize=o[:batchsize])
@@ -101,7 +104,7 @@ function main(args=ARGS)
 
     # training started
     for epoch=1:o[:epochs]
-        train!(param, state, tdata, o) # train!(param, deepcopy(state), tdata, o)
+        @time train!(param, state, tdata, o) # train!(param, deepcopy(state), tdata, o)
         devloss = test(param, state, ddata; perp=true)
         println("Dev loss for epoch $epoch : $devloss")
 
