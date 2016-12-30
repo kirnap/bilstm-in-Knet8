@@ -100,7 +100,7 @@ function main(args=ARGS)
 
     # training started
     for epoch=1:o[:epochs]
-        train!(param, state, tdata, o) # train!(param, deepcopy(state), tdata, o)
+        @time train!(param, state, tdata, o) # train!(param, deepcopy(state), tdata, o)
         devloss = test(param, state, ddata; perp=true)
         println("Dev loss for epoch $epoch : $devloss")
 
