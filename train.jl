@@ -8,6 +8,9 @@ function test(param, state, data; perp=false)
     totloss = 0.0
     numofbatch = 0
     for sequence in data
+        if length(sequence) == 2
+            continue
+        end
         val = loss(param, deepcopy(state), sequence) #val = loss(param, state, sequence)
         totloss += (perp? exp(val) : val)
         numofbatch += 1
@@ -40,6 +43,9 @@ end
 
 function train!(param, state, data, o)
     for sequence in data
+        if length(sequence) == 2
+            continue
+        end
         # Only open for gradient check
         if o[:gcheck] > 0
             gradcheck(loss, param, copy(state), sequence; gcheck=o[:gcheck])
