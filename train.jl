@@ -58,6 +58,7 @@ function main(args=ARGS)
         ("--testfile"; help="Test file")
         ("--loadfile"; help="Initialize model from file")
         ("--savefile"; help="Save final model to file")
+        ("--vocabfile"; default=nothing; help="Vocabulary file")
         ("--atype"; default=(gpu()>=0 ? "KnetArray{Float32}" : "Array{Float32}"); help="array type: Array for cpu, KnetArray for gpu")
         ("--layerconfig"; arg_type=Int; nargs='+'; default=[16]; help="Sizes of the one or more LSTM layers")
         ("--embedding"; arg_type=Int; default=200; help="embedding vector")
@@ -80,7 +81,7 @@ function main(args=ARGS)
     !o[:single_embedding] && println("Double embedding is used\n")
 
     # Data preperation
-    tdata = Data(o[:trainfile]; batchsize=o[:batchsize])
+    tdata = Data(o[:trainfile]; batchsize=o[:batchsize], vocabfile=o[:vocabfile])
     vocabsize = length(tdata.word_to_index)
 
     # Devdata preperation
