@@ -134,4 +134,4 @@ function main(args=ARGS)
         flush(STDOUT)
     end
 end
-main(ARGS)
+!isinteractive() && main(ARGS)
