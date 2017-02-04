@@ -147,7 +147,7 @@ end
 """ Creates a set that contains all the words in that file, vocab file given as each vocab in a single line
     sorted_counted represents pure create_vocab.sh output
 """
-function vocab_from_file(vocabfile; sorted_counted=true)
+function vocab_from_file(vocabfile; sorted_counted=false)
     V = Set{AbstractString}()
     open(vocabfile) do file
         for line in eachline(file)
