@@ -161,6 +161,18 @@ function vocab_from_file(vocabfile; sorted_counted=false)
     end
     return V
 end
+
+""" Builds the kth sentence from a given sequence """
+function ibuild_sentence(tdata::Data, sequence::Array{BitArray{2},1}, kth::Int)
+    sentence = Array{Any, 1}()
+    for i=1:length(sequence)
+        z = find(x->x==true, sequence[i][kth,:])
+        append!(sentence, z)
+    end
+    ret = map(x->tdata.index_to_word[x], sentence)
+    return ret
+end
+
 # FUTURE CODE: if one day knet8 allows us to change batchsize on the fly, following lines will implement surplus batch implementation, this code snippet would be put on sentenbatch
     # (length(sentences) != batchsize) && (println("I am using the surplus sentences:) $from : $to"))
     # scount = length(sentences) # it can be either batchsize or the surplus sentences
