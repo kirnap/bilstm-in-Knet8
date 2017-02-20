@@ -112,7 +112,7 @@ function start(s::Data)
     sdict = deepcopy(s.sequences)
     clean_seqdict!(sdict, s.batchsize)
     @assert (!isempty(sdict)) "There is not enough data with that batchsize $(s.batchsize)"
-    slens = collect(keys(sdict))
+    slens = shuffle!(collect(keys(sdict)))
     seqlen = pop!(slens)
     from = nothing
     vocabsize = length(s.word_to_index)
